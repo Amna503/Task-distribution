@@ -1,4 +1,6 @@
-const API_BASE = '/api';
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:3001/api'
+  : '/api';
 
 export async function fetchTasks(filters = {}) {
   const params = new URLSearchParams();
