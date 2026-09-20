@@ -21,11 +21,19 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { url, method } = req;
-  const urlObj = new URL(url, `http://${req.headers.host}`);
-  const pathname = urlObj.pathname;
+  const url = req.url || '/';
+  const method = req.method;
 
-  if (pathname === '/api/tasks' && method === 'GET') {
+  if (url === '/api/stats' && method === 'GET') {
+    const total = tasks.length;
+    const pending = tasks.filter(t => t.status === 'pending').length;
+    const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+    const completed = tasks.filter(t => t.status === 'completed').length;
+    return res.status(200).json({ total, pending, inProgress, completed });
+  }
+
+  if (url === '/api/tasks' && method === 'GET') {
+    const urlObj = new URL(url, 'http://localhost');
     const status = urlObj.searchParams.get('status');
     const priority = urlObj.searchParams.get('priority');
     const search = urlObj.searchParams.get('search');
@@ -45,13 +53,13 @@ export default async function handler(req, res) {
     return res.status(200).json(filtered);
   }
 
-  if (pathname === '/api/tasks' && method === 'POST') {
+  if (url === '/api/tasks' && method === 'POST') {
     const body = await parseBody(req);
     const { title, description, status, priority } = body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
 
     const task = {
-      id: crypto.randomUUID(),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       title,
       description: description || '',
       status: status || 'pending',
@@ -63,15 +71,7 @@ export default async function handler(req, res) {
     return res.status(201).json(task);
   }
 
-  if (pathname === '/api/stats' && method === 'GET') {
-    const total = tasks.length;
-    const pending = tasks.filter(t => t.status === 'pending').length;
-    const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-    const completed = tasks.filter(t => t.status === 'completed').length;
-    return res.status(200).json({ total, pending, inProgress, completed });
-  }
-
-  const taskMatch = pathname.match(/^\/api\/tasks\/([a-zA-Z0-9-]+)$/);
+  const taskMatch = url.match(/^\/api\/tasks\/([a-zA-Z0-9-]+)$/);
   if (taskMatch) {
     const id = taskMatch[1];
 
