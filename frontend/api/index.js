@@ -1,6 +1,18 @@
 let tasks = [];
 
-export default function handler(req, res) {
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try { resolve(body ? JSON.parse(body) : {}); }
+      catch { resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}
+
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -34,7 +46,8 @@ export default function handler(req, res) {
   }
 
   if (pathname === '/api/tasks' && method === 'POST') {
-    const { title, description, status, priority } = req.body;
+    const body = await parseBody(req);
+    const { title, description, status, priority } = body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
 
     const task = {
@@ -72,7 +85,8 @@ export default function handler(req, res) {
       const idx = tasks.findIndex(t => t.id === id);
       if (idx === -1) return res.status(404).json({ error: 'Task not found' });
 
-      const { title, description, status, priority } = req.body;
+      const body = await parseBody(req);
+      const { title, description, status, priority } = body;
       tasks[idx] = {
         ...tasks[idx],
         title: title ?? tasks[idx].title,
