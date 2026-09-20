@@ -17,14 +17,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const url = req.url || '/';
+  const urlObj = new URL(req.url, 'http://localhost');
+  const pathname = urlObj.pathname;
   const method = req.method;
 
-  if (url === '/api/stats' && method === 'GET') {
+  if (pathname === '/api/stats' && method === 'GET') {
     const total = tasks.length;
     const pending = tasks.filter(t => t.status === 'pending').length;
     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
@@ -32,13 +31,11 @@ export default async function handler(req, res) {
     return res.status(200).json({ total, pending, inProgress, completed });
   }
 
-  if (url === '/api/tasks' && method === 'GET') {
-    const urlObj = new URL(url, 'http://localhost');
+  if (pathname === '/api/tasks' && method === 'GET') {
     const status = urlObj.searchParams.get('status');
     const priority = urlObj.searchParams.get('priority');
     const search = urlObj.searchParams.get('search');
     let filtered = [...tasks];
-
     if (status) filtered = filtered.filter(t => t.status === status);
     if (priority) filtered = filtered.filter(t => t.priority === priority);
     if (search) {
@@ -48,16 +45,14 @@ export default async function handler(req, res) {
         (t.description && t.description.toLowerCase().includes(s))
       );
     }
-
     filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     return res.status(200).json(filtered);
   }
 
-  if (url === '/api/tasks' && method === 'POST') {
+  if (pathname === '/api/tasks' && method === 'POST') {
     const body = await parseBody(req);
     const { title, description, status, priority } = body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
-
     const task = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       title,
@@ -71,7 +66,7 @@ export default async function handler(req, res) {
     return res.status(201).json(task);
   }
 
-  const taskMatch = url.match(/^\/api\/tasks\/([a-zA-Z0-9-]+)$/);
+  const taskMatch = pathname.match(/^\/api\/tasks\/([a-zA-Z0-9-]+)/);
   if (taskMatch) {
     const id = taskMatch[1];
 
@@ -84,7 +79,6 @@ export default async function handler(req, res) {
     if (method === 'PUT') {
       const idx = tasks.findIndex(t => t.id === id);
       if (idx === -1) return res.status(404).json({ error: 'Task not found' });
-
       const body = await parseBody(req);
       const { title, description, status, priority } = body;
       tasks[idx] = {
