@@ -1,6 +1,6 @@
 # Task Dashboard
 
-A full-stack task management dashboard built with **React** and **Node.js**, deployed on **Vercel**.
+A full-stack task management dashboard built with **React** and **Node.js**, deployed on the **Vercel**.
 
 ## Live Demo
 
