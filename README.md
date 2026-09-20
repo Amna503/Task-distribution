@@ -95,3 +95,4 @@ This project is deployed on **Vercel**. To deploy your own:
 ## Author
 
 **Amna Kaleem** — [GitHub](https://github.com/Amna503)
+BSIT
